@@ -1,6 +1,6 @@
-(ns rocket.core-test
+(ns scratch.core-test
   (:require [clojure.test :refer :all]
-            [rocket.core :refer :all]))
+            [scratch.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
