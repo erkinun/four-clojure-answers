@@ -233,3 +233,31 @@
     (if (empty? items)
       zipped
       (recur (inc i) (rest items) (conj zipped [(first items) i])))))
+
+(def evolve (fn [row] (if (= 1 (count row))
+                        [1 1]
+                        (loop [index 0
+                               new-row [1]]
+                          (if (= index (- (count row) 1))
+                            (conj new-row 1)
+                            (recur (inc index) (conj new-row (+ (row index) (row (inc index))))))))))
+
+(defn pascal-triangle [n]
+  (let [evolve-fn (fn [row] (if (= 1 (count row))
+                              [1 1]
+                              (loop [index 0
+                                     new-row [1]]
+                                (if (= index (- (count row) 1))
+                                  (conj new-row 1)
+                                  (recur (inc index) (conj new-row (+ (row index) (row (inc index)))))))))]
+    (loop [i 1
+           current-row [1]]
+      (if (= n i)
+        current-row
+        (recur (inc i) (evolve-fn current-row))))))
+
+(defn my-map [f [x & xs]]
+  (if x
+    (lazy-seq
+      (cons (f x) (my-map f xs)))
+    []))
