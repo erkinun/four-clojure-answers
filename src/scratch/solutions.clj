@@ -261,3 +261,13 @@
     (lazy-seq
       (cons (f x) (my-map f xs)))
     []))
+
+(defn global-take-while [nth p col]
+  (loop [n nth
+         acc []
+         items col]
+    (if (or (empty? items) (= 0 n))
+      (drop-last acc)
+      (if-let [_ (p (first items))]
+        (recur (dec n) (conj acc (first items)) (rest items))
+        (recur n (conj acc (first items)) (rest items))))))
