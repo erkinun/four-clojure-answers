@@ -271,3 +271,18 @@
       (if-let [_ (p (first items))]
         (recur (dec n) (conj acc (first items)) (rest items))
         (recur n (conj acc (first items)) (rest items))))))
+
+(defn balance [n]
+  (let [str-n (str n)
+        length (count str-n)
+        mid (int (/ length 2))]
+    (if (>= mid 1)
+      (let [char->int #(- (int %) 48)
+            left (take mid str-n)
+            left-ints (map char->int left)
+            right (take-last mid str-n)
+            right-ints (map char->int right)
+            left-sum (reduce + left-ints)
+            right-sum (reduce + right-ints)]
+        (= left-sum right-sum))
+      true)))
