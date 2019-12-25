@@ -286,3 +286,13 @@
             right-sum (reduce + right-ints)]
         (= left-sum right-sum))
       true)))
+
+(defn is-bst? [tree]
+  (cond
+    (nil? tree) true
+    (boolean? tree) false
+    :else (let [[value left right & others] tree
+                should-be-three (= 3 (count tree))
+                is-head-ok? (not (nil? value))
+                are-there-others? (nil? others)]
+            (and is-head-ok? should-be-three are-there-others? (is-bst? left) (is-bst? right)))))
