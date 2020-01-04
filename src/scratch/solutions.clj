@@ -296,3 +296,9 @@
                 is-head-ok? (not (nil? value))
                 are-there-others? (nil? others)]
             (and is-head-ok? should-be-three are-there-others? (is-bst? left) (is-bst? right)))))
+
+(defn smaller-than-sq-sums [ints]
+  (letfn [(sqrs [digits] (map #(* % %) digits))
+          (digits [num] (->> num str vec (map #(- (int %) 48))))
+          (sum-nums [nums] (reduce + 0 nums))]
+    (count (filter #(< % (sum-nums (sqrs (digits %)))) ints))))
