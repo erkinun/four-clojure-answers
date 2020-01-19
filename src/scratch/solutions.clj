@@ -302,3 +302,11 @@
           (digits [num] (->> num str vec (map #(- (int %) 48))))
           (sum-nums [nums] (reduce + 0 nums))]
     (count (filter #(< % (sum-nums (sqrs (digits %)))) ints))))
+
+(defn suit->map [suit-str]
+  (let [suits {"S" :spade "H" :heart "D" :diamond "C" :club}
+        ranks {"2" 0 "3" 1 "4" 2 "5" 3 "6" 4 "7" 5 "8" 6 "9" 7 "T" 8 "J" 9 "Q" 10 "K" 11 "A" 12}
+        [suit & rank] suit-str
+        s-str (str suit)
+        r-str (clojure.string/join rank)]
+    {:suit (get suits s-str) :rank (get ranks r-str)}))
