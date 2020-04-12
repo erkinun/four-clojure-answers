@@ -15,7 +15,7 @@
 
 (comment (map inc [1 2 3 4 5]))
 
-(map inc [1 2 ])
+(map inc [1 2])
 
 (defn create-map [value keys]
   (->>
@@ -42,7 +42,7 @@
 
 (defn my-count [items]
   (loop [index 0
-        is items]
+         is items]
     (if (empty? is)
       index
       (recur (+ 1 index) (rest is)))))
@@ -93,7 +93,7 @@
 (defn get-caps [word]
   (->> word
        (filter #(Character/isUpperCase %))
-       (clojure.string/join )))
+       (clojure.string/join)))
 
 (defn compress [coll]
   (loop [compressed '()
@@ -112,9 +112,9 @@
       (if-let [phead (first packed)]
         (if (some #(= head %) phead)
           (recur (rest xs) (conj (rest packed) (conj phead head))) ; phead has head, so add that to the list and recur
-          (recur (rest xs) (conj packed (list head))))                 ; phead does not have head, so insert it as a new list and recur
-        (recur (rest xs) (conj packed (list head))))            ; packed is empty, insert head as a list
-      (reverse packed))))                                             ; xs is empty return packed
+          (recur (rest xs) (conj packed (list head))))      ; phead does not have head, so insert it as a new list and recur
+        (recur (rest xs) (conj packed (list head))))        ; packed is empty, insert head as a list
+      (reverse packed))))                                   ; xs is empty return packed
 
 (defn half-truth [b & bs]
   (let [booleans (conj bs b)
@@ -134,7 +134,7 @@
       generated)))
 
 (defn re-iterate [func value]
-  (cons value (lazy-seq (re-iterate func (func value)))))                      ; my point : )
+  (cons value (lazy-seq (re-iterate func (func value)))))   ; my point : )
 
 (defn my-group-by [func col]
   (loop [r col
@@ -142,7 +142,7 @@
     (if (not-empty r)
       (let [head (first r)                                  ; as long as we have more items
             applied (func head)]
-        (if-let [existing (result-map applied)]  ; if we already have a list of vector for this key
+        (if-let [existing (result-map applied)]             ; if we already have a list of vector for this key
           (recur (rest r) (->> head (conj existing) (assoc result-map applied))) ; add the r to this vector and assoc it again
           (recur (rest r) (assoc result-map applied [head])) ; create a new key value pair and recur
           ))
@@ -154,7 +154,7 @@
 
 (defn gcd [x y]
   (loop [left (if (>= x y) x y)
-         right (if (<= x y)x y)]
+         right (if (<= x y) x y)]
     (let [mod-result (mod left right)]
       (if (= mod-result 0)
         right
@@ -296,6 +296,54 @@
                 is-head-ok? (not (nil? value))
                 are-there-others? (nil? others)]
             (and is-head-ok? should-be-three are-there-others? (is-bst? left) (is-bst? right)))))
+
+(defn mirror [tree]
+  (cond
+    (nil? tree) tree
+    :else
+    (let [[root left right] tree]
+      (if (= nil root)
+        nil
+        [root (mirror right) (mirror left)]))))
+
+(defn eq-tree [left right]
+  (cond
+    (and (nil? left) (nil? right)) true
+    (or (nil? left) (nil? right)) false
+    :else
+    (let [[lroot lleft lright] left
+          [rroot rleft rright] right]
+      (and (= lroot rroot) (eq-tree lleft rleft) (eq-tree lright rright)))))
+
+(defn is-symmetric-tree [tree]
+  (cond
+    (nil? tree) true
+    :else (let [[_ left right] tree
+                mirrored (mirror left)]
+            (eq-tree mirrored right))))
+
+(defn is-symmetric-bundled [tree]
+  (letfn [(mirror [tree]
+            (cond
+              (nil? tree) tree
+              :else
+              (let [[root left right] tree]
+                (if (= nil root)
+                  nil
+                  [root (mirror right) (mirror left)]))))
+          (eq-tree [left right]
+            (cond
+              (and (nil? left) (nil? right)) true
+              (or (nil? left) (nil? right)) false
+              :else
+              (let [[lroot lleft lright] left
+                    [rroot rleft rright] right]
+                (and (= lroot rroot) (eq-tree lleft rleft) (eq-tree lright rright)))))]
+    (cond
+      (nil? tree) true
+      :else (let [[_ left right] tree
+                  mirrored (mirror left)]
+              (eq-tree mirrored right)))))
 
 (defn smaller-than-sq-sums [ints]
   (letfn [(sqrs [digits] (map #(* % %) digits))
