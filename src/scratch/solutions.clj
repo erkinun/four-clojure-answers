@@ -358,3 +358,65 @@
         s-str (str suit)
         r-str (clojure.string/join rank)]
     {:suit (get suits s-str) :rank (get ranks r-str)}))
+
+; The function is expected to return an INTEGER.
+; The function accepts following parameters:
+;  1. INTEGER steps
+;  2. STRING path
+;
+
+(defn countingValleys [steps path]
+  (let [path-array (clojure.string/split path #"")]
+    (-> (reduce (fn [{:keys [level valleys]} step]
+                  (if (= "D" step)
+                    {:level (dec level) :valleys valleys}
+                    (if (= -1 level)
+                      {:level (inc level) :valleys (inc valleys)}
+                      {:level (inc level) :valleys valleys})))
+                {:level 0 :valleys 0} path-array)
+        :valleys)))
+
+; Complete the jumpingOnClouds function below.
+; https://www.hackerrank.com/challenges/jumping-on-the-clouds/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=warmup&h_r=next-challenge&h_v=zen
+(defn jumpingOnClouds [c]
+  (loop [
+         index 0
+         jumps 0
+         clouds c]
+    (if (>= index (count clouds))
+      (dec jumps)
+      (if (= 0 (get clouds (+ index 2)))
+        (recur (+ index 2) (inc jumps) clouds)
+        (recur (+ index 1) (inc jumps) clouds)))))
+
+;; https://www.hackerrank.com/challenges/repeated-string/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=warmup&h_r=next-challenge&h_v=zen
+(defn repeatedString [s n]
+  (let [substr-length (count s)
+        required-repeat (-> n (/ substr-length) long)
+        part-str (-> (mod n substr-length)
+                     (take s)
+                     (clojure.string/join))
+        a-counter (fn [str] (count (filter
+                                     (fn [c] (= "a" c))
+                                     (clojure.string/split str #""))))
+        part-count (a-counter part-str)
+        a-count (a-counter s)]
+    (+ part-count (* required-repeat a-count))))
+
+;; https://www.hackerrank.com/challenges/ctci-array-left-rotation/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=arrays
+;(defn rotLeft [a d]
+;  (loop [ times d
+;         [first & rest] (vec a)]
+;    (prn "first and rest" first rest)
+;    (if (= 0 times)
+;      (concat [first] rest)
+;      (recur (dec times) (concat rest [first])))))
+
+(defn rotLeft [a d]
+  (loop [ times d
+         [first & rest] a
+         second-vec []]
+    (if (= 0 times)
+      (concat [first] rest second-vec)
+      (recur (dec times) rest (conj second-vec first)))))
+
