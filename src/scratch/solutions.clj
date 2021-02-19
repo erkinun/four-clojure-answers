@@ -377,7 +377,7 @@
         :valleys)))
 
 ; Complete the jumpingOnClouds function below.
-; https://www.hackerrank.com/challenges/jumping-on-the-clouds/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=warmup&h_r=next-challenge&h_v=zen
+; https://www.hackerrank.com/challenges/jumping-on-the-clouds/
 (defn jumpingOnClouds [c]
   (loop [
          index 0
@@ -389,7 +389,7 @@
         (recur (+ index 2) (inc jumps) clouds)
         (recur (+ index 1) (inc jumps) clouds)))))
 
-;; https://www.hackerrank.com/challenges/repeated-string/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=warmup&h_r=next-challenge&h_v=zen
+;; https://www.hackerrank.com/challenges/repeated-string/
 (defn repeatedString [s n]
   (let [substr-length (count s)
         required-repeat (-> n (/ substr-length) long)
@@ -403,15 +403,7 @@
         a-count (a-counter s)]
     (+ part-count (* required-repeat a-count))))
 
-;; https://www.hackerrank.com/challenges/ctci-array-left-rotation/problem?h_l=interview&playlist_slugs%5B%5D=interview-preparation-kit&playlist_slugs%5B%5D=arrays
-;(defn rotLeft [a d]
-;  (loop [ times d
-;         [first & rest] (vec a)]
-;    (prn "first and rest" first rest)
-;    (if (= 0 times)
-;      (concat [first] rest)
-;      (recur (dec times) (concat rest [first])))))
-
+;; https://www.hackerrank.com/challenges/ctci-array-left-rotation/
 (defn rotLeft [a d]
   (loop [ times d
          [first & rest] a
@@ -420,3 +412,37 @@
       (concat [first] rest second-vec)
       (recur (dec times) rest (conj second-vec first)))))
 
+;; https://www.hackerrank.com/challenges/new-year-chaos/
+(defn minimumBribes [q]
+  (let [sorted-q (range 1 (-> q count inc))
+        bribes (map-indexed (fn [idx itm]
+                              (if (> itm (inc idx))
+                                (Math/abs
+                                  (-
+                                    (nth sorted-q idx) itm))
+                                0)) q)
+        too-chaotic (some (fn [brb] (>= brb 3)) bribes)]
+    (if too-chaotic
+      (prn "Too chaotic")
+      (prn (reduce + bribes)))))
+
+
+;; https://www.hackerrank.com/challenges/ctci-ransom-note
+(defn checkMagazine [magazine note]
+  (let [freq-m (frequencies magazine)
+        freq-n (frequencies note)
+        not-suff? (some (fn [[k v]] (or (nil? (freq-m k)) (> v (freq-m k)))) freq-n)]
+    (if not-suff? (print "No") (print "Yes")))
+  )
+
+(defn maximumToys [prices k]
+  (let [sorted-p (sort prices)]
+    (:toys (reduce (fn [state, toy]
+                     (if (<= toy (:budget state))
+                       (-> state
+                           (update :budget (fn [b] (- b toy)))
+                           (update :toys inc))
+                       state))
+                   {:budget k :toys 0}
+                   sorted-p)))
+  )
