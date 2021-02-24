@@ -444,5 +444,135 @@
                            (update :toys inc))
                        state))
                    {:budget k :toys 0}
-                   sorted-p)))
+                   sorted-p))))
+
+(defn countSwaps [a]
+  (let [swap (fn [arr i]
+               (let [  item (nth arr i)
+                     next (nth arr (inc i))]
+                 (-> arr (assoc i next (inc i) item))))
+        {:keys [swaps sorted]} (loop [ i 0
+                                      arr a
+                                      swaps 0
+                                      n (count a)]
+                                 (if (>= i n)
+                                   {:swaps swaps :sorted arr}
+                                   (let [{:keys [swaps sorted]} (loop [i 0
+                                                                       arr-p arr
+                                                                       swaps swaps]
+                                                                  (if (>= i (dec n))
+                                                                    {:swaps swaps :sorted arr-p}
+                                                                    (if (> (nth arr-p i) (nth arr-p (inc i)))
+                                                                      (recur (inc i) (swap arr-p i) (inc swaps))
+                                                                      (recur (inc i) arr-p swaps))))]
+                                     (recur (inc i) sorted swaps n))))]
+    (println "Array is sorted in" swaps "swaps.")
+    (println "First Element:" (first sorted))
+    (println "Last Element:" (last sorted))))
+
+;; you'd normally just use to set and sort again : ) but anyway
+;; https://leetcode.com/explore/interview/card/top-interview-questions-easy/92/array/727/
+(defn shift-left [arr i]
+  (let [arr (vec arr)
+        item (nth arr i)
+        first-part (subvec arr 0 i)
+        rest-part (subvec arr (inc i) (count arr))]
+    (concat first-part rest-part [item])))
+
+(defn remove-duplicates [arr]
+  (loop [i 0
+         last-i (-> arr count dec)
+         changed arr]
+    (if (= i last-i)
+      (subvec (vec changed) 0 (inc i))
+      (let [curr (nth changed i)
+            next (nth changed (inc i))]
+        (if (== curr next)
+          (recur i (dec last-i) (shift-left changed (inc i)))
+          (recur (inc i) last-i changed))))))
+
+(defn solveMeFirst [x y]
+  (+ x y))
+
+(defn compress [string]
+  (let [  freqs (partition-by identity string)
+        mapped (map (fn [freq-list]
+                      (let [c (count freq-list)
+                            character (first freq-list)]
+                        (if (= c 1)
+                          (str character)
+                          (str character c)))) freqs)]
+    (clojure.string/join "" mapped)))
+
+(defn indices [pred coll]
+  (keep-indexed #(when (pred %2) %1) coll))
+
+(defn filter-elements [arr filter-count]
+  (let [freqs (frequencies arr)
+        eligibiles (filter (fn [[k v]] (<= filter-count v)) freqs)
+        keys (map first eligibiles)]
+    (->> keys
+         (map (fn [k] {k (first (indices #(= k %) arr))}))
+         (into {})
+         (sort-by val <)
+         (map first)
+         )))
+
+(defn twoStrings [s1 s2]
+  (let [set1 (set s1)
+        set2 (set s2)
+        itrstn (clojure.set/intersection set1 set2)]
+    (if (not-empty itrstn)
+      "YES"
+      "NO"))
   )
+
+;; https://www.hackerrank.com/challenges/ctci-making-anagrams/problem
+(defn remove-str [string c]
+  (let [index (clojure.string/index-of string c)]
+    (if index
+      (let [vec-str (vec string)
+            first-part (take index vec-str)
+            second-part (take-last (- (count vec-str) (inc index)) vec-str)]
+        (clojure.string/join "" (concat first-part second-part)))
+      string)))
+
+(defn makeAnagram [a b]
+  (let [vec-a (vec a)
+        vec-b (vec b)
+        {:keys [common _]} (reduce
+                     (fn [{:keys [common target]} c]
+                       (if (clojure.string/includes? target (str c))
+                         {:common (conj common c) :target (remove-str target c)}
+                         {:common common :target target}))
+                     {:common [] :target b}
+                     a)]
+    (+
+      (- (count vec-a) (count common))
+      (- (count vec-b) (count common)))))
+
+;; https://www.hackerrank.com/challenges/balanced-brackets/
+(defn isBalanced [s]
+  (loop [ brackets s
+         stack '()]
+    (if (seq brackets)
+      (let [ch (first brackets)]
+        (cond
+          (or
+            (= \[ ch)
+            (= \{ ch)
+            (= \( ch)) (recur (rest brackets) (conj stack ch))
+          :else (let [top (peek stack)]
+            (condp = ch
+              \] (if (= \[ top)
+                   (recur (rest brackets) (pop stack))
+                   "NO")
+              \} (if (= \{ top)
+                   (recur (rest brackets) (pop stack))
+                   "NO")
+              \) (if (= \( top)
+                   (recur (rest brackets) (pop stack))
+                   "NO")))))
+      (if (seq stack)
+        "NO"
+        "YES"))))
