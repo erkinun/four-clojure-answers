@@ -405,7 +405,7 @@
 
 ;; https://www.hackerrank.com/challenges/ctci-array-left-rotation/
 (defn rotLeft [a d]
-  (loop [ times d
+  (loop [times d
          [first & rest] a
          second-vec []]
     (if (= 0 times)
@@ -448,10 +448,10 @@
 
 (defn countSwaps [a]
   (let [swap (fn [arr i]
-               (let [  item (nth arr i)
+               (let [item (nth arr i)
                      next (nth arr (inc i))]
                  (-> arr (assoc i next (inc i) item))))
-        {:keys [swaps sorted]} (loop [ i 0
+        {:keys [swaps sorted]} (loop [i 0
                                       arr a
                                       swaps 0
                                       n (count a)]
@@ -495,7 +495,7 @@
   (+ x y))
 
 (defn compress [string]
-  (let [  freqs (partition-by identity string)
+  (let [freqs (partition-by identity string)
         mapped (map (fn [freq-list]
                       (let [c (count freq-list)
                             character (first freq-list)]
@@ -541,19 +541,19 @@
   (let [vec-a (vec a)
         vec-b (vec b)
         {:keys [common _]} (reduce
-                     (fn [{:keys [common target]} c]
-                       (if (clojure.string/includes? target (str c))
-                         {:common (conj common c) :target (remove-str target c)}
-                         {:common common :target target}))
-                     {:common [] :target b}
-                     a)]
+                             (fn [{:keys [common target]} c]
+                               (if (clojure.string/includes? target (str c))
+                                 {:common (conj common c) :target (remove-str target c)}
+                                 {:common common :target target}))
+                             {:common [] :target b}
+                             a)]
     (+
       (- (count vec-a) (count common))
       (- (count vec-b) (count common)))))
 
 ;; https://www.hackerrank.com/challenges/balanced-brackets/
 (defn isBalanced [s]
-  (loop [ brackets s
+  (loop [brackets s
          stack '()]
     (if (seq brackets)
       (let [ch (first brackets)]
@@ -563,16 +563,30 @@
             (= \{ ch)
             (= \( ch)) (recur (rest brackets) (conj stack ch))
           :else (let [top (peek stack)]
-            (condp = ch
-              \] (if (= \[ top)
-                   (recur (rest brackets) (pop stack))
-                   "NO")
-              \} (if (= \{ top)
-                   (recur (rest brackets) (pop stack))
-                   "NO")
-              \) (if (= \( top)
-                   (recur (rest brackets) (pop stack))
-                   "NO")))))
+                  (condp = ch
+                    \] (if (= \[ top)
+                         (recur (rest brackets) (pop stack))
+                         "NO")
+                    \} (if (= \{ top)
+                         (recur (rest brackets) (pop stack))
+                         "NO")
+                    \) (if (= \( top)
+                         (recur (rest brackets) (pop stack))
+                         "NO")))))
       (if (seq stack)
         "NO"
         "YES"))))
+
+
+; https://www.hackerrank.com/challenges/alternating-characters
+(defn alternatingCharacters [s]
+  (->
+    (reduce (fn [{:keys [lead deletions]} c]
+              (cond
+                (and (= lead \A) (= c \B)) {:lead c :deletions deletions}
+                (and (= lead \A) (= c \A)) {:lead c :deletions (inc deletions)}
+                (and (= lead \B) (= c \A)) {:lead c :deletions deletions}
+                :else {:lead c :deletions (inc deletions)}))
+            {:lead (first s) :deletions 0}
+            (rest s))
+    :deletions))
