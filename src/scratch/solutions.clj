@@ -590,3 +590,40 @@
             {:lead (first s) :deletions 0}
             (rest s))
     :deletions))
+
+;; https://www.hackerrank.com/challenges/sherlock-and-valid-string/problem
+(defn isValid [s]
+  (let [freqs (frequencies s)
+        occrs (group-by (fn [[_ v]] v) freqs)
+        min (apply min (keys occrs))
+        all-keys (keys occrs)
+        impossible? (some #(> % (inc min)) all-keys)]
+    (cond
+      (= (count occrs) 1) "YES"
+      (and (not impossible?) (-> occrs (get (inc min)) count (= 1))) "YES"
+      (and (= (count occrs) 2) (some #(= 1 %) all-keys) (= 1 (count (get occrs 1)))) "YES"
+      :else "NO")
+    ))
+
+(defn minimumAbsoluteDifference [arr]
+  (let [sorted (sort arr)
+        diffs (reduce (fn [{:keys [prev diff-arr]} item]
+                        {:prev item :diff-arr (conj diff-arr (Math/abs (- item prev)))})
+                      {:prev (first sorted)
+                       :diff-arr []}
+                      (rest sorted))]
+    (-> diffs :diff-arr sort first)))
+
+;; https://www.hackerrank.com/challenges/luck-balance/problem
+(defn luckBalance [k contests]
+  (let [important-ones (->> contests
+                            (filter (fn [[_ importance]] (= 1 importance)))
+                            (sort-by (fn [[luck _]] luck))
+                            reverse)
+        can-lose (take k important-ones)
+        must-win (drop k important-ones)
+        rest (filter (fn [[_ importance]] (= 0 importance)) contests)]
+    (prn (concat important-ones rest))
+    (-
+      (reduce + (map (fn [[importance _]] importance) (concat can-lose rest)))
+      (reduce + (map (fn [[importance _]] importance) must-win)))))
