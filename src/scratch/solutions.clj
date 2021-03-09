@@ -609,7 +609,7 @@
   (let [sorted (sort arr)
         diffs (reduce (fn [{:keys [prev diff-arr]} item]
                         {:prev item :diff-arr (conj diff-arr (Math/abs (- item prev)))})
-                      {:prev (first sorted)
+                      {:prev     (first sorted)
                        :diff-arr []}
                       (rest sorted))]
     (-> diffs :diff-arr sort first)))
@@ -627,3 +627,268 @@
     (-
       (reduce + (map (fn [[importance _]] importance) (concat can-lose rest)))
       (reduce + (map (fn [[importance _]] importance) must-win)))))
+
+(defn fizzBuzz [n]
+  (loop [i 1]
+    (if (> i n)
+      nil
+      (do
+        (cond
+          (= 0 (mod i 15)) (println "FizzBuzz")
+          (= 0 (mod i 5)) (println "Buzz")
+          (= 0 (mod i 3)) (println "Fizz")
+          :else (println i))
+        (recur (inc i)))))
+  )
+
+(defn grid->grid-map [grid]
+  (let [spread (map (fn [row] (clojure.string/split row #"")) grid)]
+    (:acc (reduce (fn [{:keys [row acc]} item]
+                    {:row (inc row)
+                     :acc (into acc (:acc-m
+                                      (reduce (fn [{:keys [col acc-m]} i] {:col (inc col) :acc-m (into acc-m [[[row col] (Integer/parseInt i)]])})
+                                              {:col 0 :acc-m acc}
+                                              item)))})
+                  {:row 0 :acc {}}
+                  spread))))
+
+(defn region [grid-map]
+  (let [ones (filter (fn [[k v]] (= v 1)) grid-map)]
+
+    (loop [to-test (keys ones)
+           regions #{}]
+      (if (seq to-test)
+        ;; do your thing
+        (let [first-item (first to-test)
+              [x y] first-item
+              possibles #{[(dec x) y] [(inc x) y] [x (dec y)] [x (inc y)]}
+              candidates (rest to-test)
+              actuals (filter
+                        (fn [point] (contains? possibles point))
+                        candidates)
+              current-region (conj actuals first-item)]
+          (recur (remove (fn [point] (some (fn [item] (= item point)) current-region)) to-test)
+                 (conj regions current-region)))
+        regions))))
+
+(defn overlaps [gm1 gm2]
+  ;; TODO complete and over the two maps
+  gm1
+  )
+
+(defn countMatches [grid1 grid2]
+  (let [gm1 (grid->grid-map grid1)
+        gm2 (grid->grid-map grid2)
+        overlaps (overlaps gm1 gm2)]
+    (count (region overlaps)))
+  )
+
+(defn find-region [[x y] region others]
+  (let [connections (for [xi [(dec x) x (inc x)]
+                          yi [(dec y) y (inc y)]
+                          :when (not= [x y] [xi yi])]
+                      [xi yi])
+        matches (filter (fn [con] (contains? (set others) con)) connections)]
+    (if (seq matches)
+      (reduce (fn [region match] (clojure.set/union region (find-region match region (remove
+                                                                                       (fn [o] (contains? (set matches) o))
+                                                                                       others))))
+              (into region matches)
+              matches)
+      (set region))))
+
+
+;; https://www.hackerrank.com/challenges/connected-cell-in-a-grid/problem
+(defn connectedCell [matrix]
+  (let [filled-cells (set (for [x (range (count matrix))
+                                y (range (count (first matrix)))
+                                :when (= 1 (-> matrix (nth x) (nth y)))]
+                            [x y]))]
+    (loop [fills filled-cells
+           regions #{}]
+      (if (seq fills)
+        (let [first-item (first fills)
+              rest-of-them (rest fills)
+              region-here (find-region first-item #{first-item} rest-of-them)]
+          (recur rest-of-them (conj regions region-here)))
+        (do
+          (->> regions
+               set
+               (map #(count %))
+               sort
+               last))))))
+
+;; https://www.hackerrank.com/challenges/climbing-the-leaderboard/problem
+;; TODO create the [score - rank] tuple of vectors
+;; TODO then filter and get the last items rank + 1
+(defn climbingLeaderboard-easy [ranked player]
+  (let [sorted-ranks (->> ranked set (sort-by -))]
+    (map
+      (fn [play]
+        (let [better-scores (filterv #(> % play) sorted-ranks)]
+          (inc (count better-scores))))
+      player)
+    )
+  )
+
+;; TODO optimized
+(defn climbingLeaderboard [ranked player]
+  (let [distinct-ranks (distinct ranked)]
+    (:rankings (reduce
+                 (fn [{:keys [i rankings]} score]
+                   (loop [index i]
+                     (if (< score (nth distinct-ranks index))
+                       {:i index :rankings (conj rankings (+ 2 index))}
+                       (if (= 0 index)
+                         {:i index :rankings (conj rankings 1)}
+                         (recur (dec index))))))
+                 {:i (dec (count distinct-ranks)) :rankings []}
+                 player))))
+
+(defn sort-parts [work]
+  (lazy-seq
+    (loop [[part & parts] work]
+      (prn part)
+      (prn parts)
+      (if-let [[pivot & xs] (seq part)]
+        (do
+          (let [smaller? #(< % pivot)]
+            (recur (list*
+                     (filter smaller? xs)
+                     pivot
+                     (remove smaller? xs)
+                     parts))))
+        (when-let [[x & parts] parts]
+          (cons x (sort-parts parts)))))))
+
+(defn qsort [xs]
+  (sort-parts (list xs)))
+
+(defn my-qsort [xs]
+  (if (or (not (seq xs)) (= 1 (count xs)))
+    xs
+    (let [pivot (first xs)
+          smaller? #(< % pivot)
+          bigger? #(> % pivot)]
+      (concat
+        (my-qsort (filter smaller? xs))
+        [pivot]
+        (my-qsort (filter bigger? xs))))))
+
+(defn subsets [seed last-index]
+  (let [l (last seed)
+        next-not-adjacent (+ 2 l)]
+    (if (> next-not-adjacent last-index)
+      [seed]
+      (let [new-seeds (for [i (range next-not-adjacent (inc last-index))]
+                        (conj seed i))]
+        (reduce (fn [v n-s] (concat v (subsets n-s last-index))) [seed] new-seeds)))
+    ))
+
+(defn all-subsets [arr]
+  (let [last-index (-> arr count dec)
+        all-indexes (for [i (range 0 (inc last-index))]
+                      (subsets [i] last-index))]
+    (reduce concat [] all-indexes)))
+
+(defn sum-for-set [arr ss]
+  (->> ss
+       (map #(nth arr %))
+       (reduce +)))
+
+(defn maxSubsetSum-first-try [arr]
+  (let [all-ss (all-subsets arr)
+        sums (map (partial sum-for-set arr) all-ss)
+        max-sum (->> sums
+                     (filter #(> % 0))
+                     sort
+                     reverse
+                     first)]
+    (if (< max-sum 0)
+      0
+      max-sum)))
+
+(defn maxSubsetSum [arr]
+  (let [zero-max (nth arr 0)
+        one-max (nth arr 1)]
+    (loop [max-so-far (max zero-max one-max 0)
+           max-at-index [zero-max one-max]
+           i 2]
+      (if (>= i (count arr))
+        max-so-far
+        (let [val-i (nth arr i)
+              max-at-i (max max-so-far val-i (+ val-i (nth max-at-index (- i 2))))]
+          (recur max-at-i (conj max-at-index max-at-i) (inc i)))))))
+
+
+(defn regions [roads]
+  (loop [regs []
+         rds roads
+         road-count 0]
+    (if (seq rds)
+      (let [[c1 c2] (first rds)
+            region-found (some #(when (or
+                                        (% c1)
+                                        (% c2))
+                                  %)
+                               regs)]
+        (if region-found
+          (let [others (filter #(not= % region-found) regs)
+                road-not-necessary? (and
+                                  (contains? region-found c1)
+                                  (contains? region-found c2))]
+            (recur
+              (conj others (into region-found #{c1 c2}))
+              (rest rds)
+              (if road-not-necessary? road-count (inc road-count))))
+          (recur (conj regs #{c1 c2}) (rest rds) (inc road-count))))
+      {:regions regs :road-count road-count})))
+
+(defn roadsAndLibraries [n c_lib c_road cities]
+  (if (> c_lib c_road)
+    (let [{:keys [regions road-count]} (regions cities)
+          connected-cities (->> regions
+                                (map count)
+                                (reduce +))
+          deprived-cities (- n connected-cities)]
+      (+ (* c_lib (count regions))
+         (* c_road road-count)
+         (* c_lib deprived-cities)))
+    (* n c_lib)))
+
+;; https://www.hackerrank.com/challenges/sherlock-and-anagrams
+(defn substrs [s]
+  (reduce concat (for [i (range 0 (count s))]
+                   (for [j (range 0 (-> s count (- i)))]
+                     (subs s j (+ j i 1))))))
+
+(defn comb-2 [n]
+  (-> n
+      (* (dec n))
+      (/ 2)))
+
+(defn sherlockAndAnagrams [s]
+  (let [all-ss (substrs s)
+        all-freqs (map frequencies all-ss)
+        grps (group-by identity all-freqs)]
+    (->> grps
+         (map (fn [[k v]] [k (count v)]))
+         (filter (fn [[_ v]] (>= v 2)))
+         (map (fn [[_ v]] (comb-2 v)))
+         (reduce +))))
+
+;; https://www.hackerrank.com/challenges/minimum-swaps-2
+(defn minimumSwaps [arr]
+  (let [sorted-arr (sort arr)]
+    (loop [cur-arr arr
+           swap-count 0
+           idx 0]
+      ;; TODO what if it doesnt match after idx > count of arr?
+      (if (= cur-arr sorted-arr)
+        swap-count
+        (let [cur-indexes (into {} (map-indexed (fn [idx item] [item idx]) cur-arr))
+              cur (nth sorted-arr idx)
+              current-index (get cur-indexes cur)]
+          (if (= idx current-index)
+            (recur cur-arr swap-count (inc idx))
+            (recur (assoc cur-arr idx cur current-index (nth cur-arr idx)) (inc swap-count) (inc idx))))))))

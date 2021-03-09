@@ -1,4 +1,4 @@
-(ns scratch.graphics)
+(ns scratch.joy_of_clojure.graphics)
 
 (defn f-values [f max-x max-y]
   (for [x (range max-x) y (range max-y)]
