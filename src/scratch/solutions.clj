@@ -835,8 +835,8 @@
         (if region-found
           (let [others (filter #(not= % region-found) regs)
                 road-not-necessary? (and
-                                  (contains? region-found c1)
-                                  (contains? region-found c2))]
+                                      (contains? region-found c1)
+                                      (contains? region-found c2))]
             (recur
               (conj others (into region-found #{c1 c2}))
               (rest rds)
@@ -892,3 +892,184 @@
           (if (= idx current-index)
             (recur cur-arr swap-count (inc idx))
             (recur (assoc cur-arr idx cur current-index (nth cur-arr idx)) (inc swap-count) (inc idx))))))))
+
+;; https://www.hackerrank.com/challenges/fraudulent-activity-notifications
+(defn median [arr]
+  (let [arr-size (count arr)]
+    (if (odd? arr-size)
+      (nth arr (-> arr-size (/ 2) int))
+      (let [m1 (nth arr (/ arr-size 2))
+            m2 (nth arr (-> arr-size (/ 2) dec))]
+        (/ (+ m1 m2) 2)))))
+
+(defn update-slice [slice trailing following]
+  (let [s-i (.indexOf slice trailing)
+        short-slice (vec (concat (subvec slice 0 s-i)
+                                 (subvec slice (inc s-i))))
+        f-i (count (filter #(>= following %) short-slice))]
+    (vec (concat
+           (subvec short-slice 0 f-i)
+           [following]
+           (subvec short-slice f-i)))))
+
+(defn activityNotifications [expenditure d]
+  (let [final (count expenditure)
+        slice (-> expenditure (subvec 0 d) sort vec)]
+    (loop [trailing 0
+           look-for d
+           notifications 0
+           slice-days slice]
+      (if (= look-for final)
+        notifications
+        ;; do the thing
+        (let [m (median slice-days)
+              expense (nth expenditure look-for)]
+          (if (>= expense (* 2 m))
+            (recur (inc trailing) (inc look-for) (inc notifications)
+                   (update-slice slice-days (nth expenditure trailing) expense))
+            (recur (inc trailing) (inc look-for) notifications
+                   (update-slice slice-days (nth expenditure trailing) expense))))
+        ))))
+
+;; https://www.hackerrank.com/challenges/special-palindrome-again
+(defn is-special? [ss]
+  (let [char-set (-> ss set)
+        ss-len (count ss)]
+    (cond
+      (= 1 (count char-set)) true
+      (and (odd? (count ss)) (let [mid-point (-> ss-len (/ 2) int)
+                                   mid-removed (str
+                                                 (subs ss 0 mid-point)
+                                                 (subs ss (inc mid-point)))
+                                   count-rest (count (set mid-removed))]
+                               (= 1 count-rest))) true
+      :else false)))
+
+(defn gen-substrs [s]
+  (reduce concat (for [i (range 0 (count s))]
+                   (for [j (range 0 (-> s count (- i)))]
+                     (subs s j (+ j i 1))))))
+
+(defn substrCount [n s]
+  (let [substrs (gen-substrs s)]
+    (->> substrs
+         (filter (fn [ss] (is-special? ss)))
+         )))
+
+;; https://www.hackerrank.com/challenges/ctci-ice-cream-parlor
+(defn whatFlavors [cost money]
+  (let [{:keys [pairs]} (reduce
+                          (fn [{:keys [pairs index]} flavor]
+                            (if (>= flavor money)
+                              {:pairs pairs :index (inc index)}
+                              (let [remaining (- money flavor)]
+                                (if (contains? pairs remaining)
+                                  {:pairs (-> pairs
+                                              (assoc-in [remaining :sol] flavor)
+                                              (assoc-in [remaining :sol-i] index))
+                                   :index (inc index)}
+                                  {:pairs (assoc pairs flavor {:i index})
+                                   :index (inc index)}))))
+                          {:pairs {} :index 1}
+                          cost)
+        solution (->> pairs
+                      (map (fn [[k {:keys [sol sol-i i]}]] [i sol-i]))
+                      (filter (fn [[k v]] v))
+                      first)]
+    (println (clojure.string/join " " solution)))
+  )
+
+;; https://www.hackerrank.com/challenges/pairs/problem
+(defn pairs [k arr]
+  (let [pairs (reduce
+                (fn [pairs item]
+                  (let [remaining (- item k)
+                        bigger (+ item k)]
+                    (cond-> pairs
+                            (contains? pairs remaining) (update remaining (fn [{:keys [matches occ]}] {:matches (conj matches item)
+                                                                                                       :occ occ}))
+                            (contains? pairs bigger) (update bigger (fn [{:keys [matches occ]}] {:matches (conj matches item)
+                                                                                                 :occ occ}))
+                            (contains? pairs item) (update item (fn [{:keys [matches occ]}]
+                                                                  (prn "updating with item: " item matches occ)
+                                                                  {:matches matches :occ (inc occ)}))
+                            (not (contains? pairs item)) (assoc item {:matches [] :occ 1}))))
+                {}
+                arr)]
+    (->> pairs
+         (filter (fn [[_ {:keys [matches occ]}]] (seq matches)))
+         (map (fn [[_ {:keys [matches occ]}]] (* (count matches) occ)))
+         (reduce +))))
+
+
+;; https://www.hackerrank.com/challenges/filter-elements/problem
+
+(defn freqs-ordered [col]
+  (let [{:keys [freqs]} (reduce
+          (fn [{:keys [freqs index]} item]
+            (if (contains? freqs item)
+              {:freqs (update freqs item (fn [{:keys [occ f-i]}] {:occ (inc occ) :f-i f-i}))
+               :index (inc index)}
+              {:freqs (assoc freqs item {:occ 1 :f-i index})
+               :index (inc index)}))
+          {:freqs {} :index 0}
+          col)]
+    (->> freqs
+         (sort-by (fn [[k {:keys [f-i]}]] f-i))
+         (map (fn [[k {:keys [occ]}]] [k occ])))))
+
+(def thread-printer (fn [f] (do (prn f) f)))
+
+(defn filter-elems [rep-count arr]
+  (let [freqs (freqs-ordered arr)]
+    (->> freqs
+         (filter (fn [[k v]] (>= v rep-count)))
+         (map first)
+         ((fn [col] (if (seq col) col [-1])))
+         (clojure.string/join " "))))
+
+(comment
+  (def test-cases (Integer/parseInt (read-line)))
+
+  (doseq [x (range test-cases)]
+    (def inputs (vec
+                  (map
+                    (fn [x] (Integer/parseInt x))
+                    (clojure.string/split (read-line) #" "))))
+
+    (def rep-count (nth inputs 1))
+
+    (def arr (vec
+               (map
+                 (fn [x] (Integer/parseInt x))
+                 (clojure.string/split (read-line) #" "))))
+
+    (println (filter-elems rep-count arr))))
+
+;; https://www.hackerrank.com/challenges/sherlock-and-array
+(defn balancedSums [arr]
+  (let [arr-sum (reduce + arr)
+        arr-len (count arr)]
+    (loop [acc 0
+           i 0]
+      (if (>= i arr-len)
+        "NO"
+        (if (= acc (- arr-sum (+ acc (nth arr i))))
+          "YES"
+          (recur (+ acc (nth arr i)) (inc i)))))))
+
+;; https://www.hackerrank.com/challenges/super-digit/problem
+
+(defn digit-sum [n]
+  (let [digits (-> n (clojure.string/split #""))
+        digit-sum (->> digits
+                       (map #(Integer/parseInt %))
+                       (reduce +))]
+    digit-sum))
+
+(defn super-digit [n k]
+  (let [sum (* (Integer/parseInt k) (digit-sum n))]
+    (loop [cur sum]
+      (if (< cur 10)
+        cur
+        (recur (digit-sum (str cur)))))))
